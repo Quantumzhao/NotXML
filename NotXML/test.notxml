@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<fun id="main">
+  <par id="argv"/>
+  <app id="print">
+    <app id="add">
+      <app>1</app>
+      <app>2</app>
+    </app>
+  </app>
+</fun>
