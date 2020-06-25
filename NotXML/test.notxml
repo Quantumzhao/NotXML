@@ -3,8 +3,8 @@
   <par id="argv"/>
   <app id="print">
     <app id="add">
-      <app>1</app>
-      <app>2</app>
+      <fun>1</fun>
+      <fun>2</fun>
     </app>
   </app>
 </fun>

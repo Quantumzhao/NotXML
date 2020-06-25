@@ -7,10 +7,15 @@ using System.Xml;
 
 namespace NotXML
 {
-	public interface IApplicable 
+	public interface IApplicable
 	{
 		DValue Invoke(List<IApplicable> args);
 		List<IApplicable> Args { get; }
+	}
+
+	public interface IFunction 
+	{
+		IFunction Invoke();
 	}
 
 	public class Program
@@ -23,9 +28,9 @@ namespace NotXML
 			//	return;
 			//}
 
-			var doc = GetMain(@"C:\Users\yisha.000\source\repos\NotXML\NotXML\test.notxml");
-			var main = new Function(doc);
-			main.Body.Invoke(new List<IApplicable>());
+			var doc = GetMain(@"C:\Users\yisha.000\source\repos\NotXML\NotXML\fib.notxml");
+			var main = Function.Create(doc, new HashSet<Function>());
+			main.Invoke();
 		}
 
 		private static XmlNode GetMain(string path)
@@ -36,34 +41,152 @@ namespace NotXML
 		}
 	}
 
-	public class Function
+	public class Function : IFunction
 	{
-		private Function(string id) => ID = id;
-		public Function(XmlNode node)
+		//public Function(XmlNode node)
+		//{
+		//	ID = node.Attributes?["id"]?.InnerText ?? string.Empty;
+		//	if (ID == string.Empty)
+		//	{
+
+		//	}
+
+		//	foreach (XmlNode component in node.ChildNodes)
+		//	{
+		//		switch (component.Name)
+		//		{
+		//			case "par":
+		//				FuncDefs.Add(new Function(component.Attributes["id"].InnerText));
+		//				break;
+
+		//			case "fun":
+		//				FuncDefs.Add(new Function(component));
+		//				break;
+
+		//			case "app":
+		//				if (component.InnerXml != component.InnerText)
+		//				{
+		//					Body = new Application(component, this);
+		//				}
+		//				else
+		//				{
+		//					Body = (DValue)component.InnerText;
+		//				}
+		//				break;
+
+		//			default:
+		//				break;
+		//		}
+		//	}
+		//}
+		private Function() { }
+		public static IFunction Create(XmlNode node, HashSet<Function> env)
 		{
-			ID = node.Attributes?["id"]?.InnerText ?? string.Empty;
+			var func = new Function();
+			func.Environment = new HashSet<Function>(env);
+			func.Environment.Add(func);
+
+			func.ID = node.Attributes?["id"]?.InnerText ?? string.Empty;
+			// It is a literal or an alias
+			if (func.ID == string.Empty)
+			{
+				// find the aliasing function
+				var specifiedFunc = env.FirstOrDefault(f => f.ID == node.InnerText);
+				if (specifiedFunc != null)
+				{
+					func.Application = new Application(specifiedFunc);
+				}
+				// generate the literal
+				else if (node.InnerText[0] == '\"')
+				{
+					var strLit = DValue.GetString(node.InnerText);
+					func.Application = new Application(strLit);
+				}
+				else
+				{
+					var valueLit = DValue.Create(node.InnerText);
+					func.Application = new Application(valueLit);
+				}
+			}
 
 			foreach (XmlNode component in node.ChildNodes)
 			{
 				switch (component.Name)
 				{
 					case "par":
-						FuncDefs.Add(new Function(component.Attributes["id"].InnerText));
+						func.Environment.Add(new Function(component.Attributes["id"].InnerText));
 						break;
 
 					case "fun":
-						FuncDefs.Add(new Function(component));
-						break;
-
-					case "app":
-						if (component.InnerXml != component.InnerText)
+						var newFunc = Function.Create(component, func.Environment);
+						if (newFunc is Function castedFunc)
 						{
-							Body = new Application(component, this);
+							func.Environment.Add(castedFunc);
 						}
 						else
 						{
-							Body = (DValue)component.InnerText;
+							throw new InvalidCastException();
 						}
+						break;
+					case "app":
+						func.Application = new Application(component, func.Environment);
+						break;
+
+					default:
+						break;
+				}
+			}
+
+			return func;
+		}
+
+		private Function(string id) => ID = id;
+		public string ID;
+		//public List<Function> FuncDefs = new List<Function>();
+		//public IApplicable Body = null;
+		public HashSet<Function> Environment = new HashSet<Function>();
+		public Application Application;
+
+		//public DValue GetValue(List<IApplicable> args)
+		//{
+		//	if (Body is Application application)
+		//	{
+		//		return application.Invoke(args);
+		//	}
+		//	else
+		//	{
+		//		return Body as DValue;
+		//	}
+		//}
+
+		public IFunction Invoke()
+		{
+			return Application.Invoke();
+		}
+	}
+
+	public class Application : IFunction
+	{
+		public Application(IFunction constFunc)
+		{
+			Link = "valueof";
+			Args.Add(constFunc);
+		}
+		public Application(XmlNode node, HashSet<Function> env)
+		{
+			Environment = new HashSet<Function>(env);
+			Link = node.Attributes["id"].InnerText;
+
+			foreach (XmlNode arg in node.ChildNodes)
+			{
+				switch (arg.Name)
+				{
+					case "fun":
+						Args.Add(Function.Create(arg, Environment));
+						break;
+
+					case "app":
+						Args.Add(new Application(arg, env));
 						break;
 
 					default:
@@ -72,203 +195,106 @@ namespace NotXML
 			}
 		}
 
-		public readonly string ID;
-		public readonly List<Function> FuncDefs = new List<Function>();
-		public IApplicable Body = null;
+		public string Link;
+		public List<IFunction> Args = new List<IFunction>();
+		public HashSet<Function> Environment = new HashSet<Function>();
 
-		public DValue GetValue(List<IApplicable> args)
+		public IFunction Invoke()
 		{
-			if (Body is Application application)
+			var func = Environment.FirstOrDefault(f => f.ID == Link);
+			if (func == null)
 			{
-				return application.Invoke(args);
+				return Stdlib.Call(Link, Args);
 			}
 			else
 			{
-				return Body as DValue;
+				return func.Invoke();
 			}
 		}
 	}
 
-	public class Application : IApplicable
-	{
-		private Application(DValue value)
-		{
-			Link = "valueof";
-			Args.Add(value);
-		}
-		public Application(XmlNode node, Function parent)
-		{
-			Link = node?.Attributes?["id"]?.InnerText ?? string.Empty;
-			_Parent = parent;
 
-			if (node.InnerXml[0] != '<')
-			{
-				var value = node.InnerText;
-				if (node.InnerText[0] == '\"')
-				{
-					Args.Add(DValue.GetString(value));
-				}
-				else
-				{
-					Args.Add((DValue)value);
-				}
-			}
-			else
-			{
-				foreach (XmlNode app in node.ChildNodes)
-				{
-					if (app.InnerText == app.InnerXml)
-					{
-						Args.Add((DValue)app.InnerText);
-					}
-					else
-					{
-						Args.Add(new Application(app, _Parent));
-					}
-				}
-			}
-		}
+	//public class Application// : IApplicable
+	//{
+	//	private Application(DValue value)
+	//	{
+	//		Link = "valueof";
+	//		Args.Add(value);
+	//	}
+	//	public Application(XmlNode node, Function parent)
+	//	{
+	//		Link = node?.Attributes?["id"]?.InnerText ?? string.Empty;
+	//		_Parent = parent;
 
-		internal string Link;
-		public List<IApplicable> Args { get; } = new List<IApplicable>();
-		private Function _Parent;
+	//		if (node.InnerXml[0] != '<')
+	//		{
+	//			var value = node.InnerText;
+	//			if (node.InnerText[0] == '\"')
+	//			{
+	//				Args.Add(DValue.GetString(value));
+	//			}
+	//			else
+	//			{
+	//				Args.Add((DValue)value);
+	//			}
+	//		}
+	//		else
+	//		{
+	//			foreach (XmlNode app in node.ChildNodes)
+	//			{
+	//				if (app.InnerText == app.InnerXml)
+	//				{
+	//					Args.Add((DValue)app.InnerText);
+	//				}
+	//				else
+	//				{
+	//					//Args.Add(new Application(app, _Parent));
+	//				}
+	//			}
+	//		}
+	//	}
 
-		public DValue Invoke(List<IApplicable> args)
-		{
-			for (int i = 0; i < args.Count; i++)
-			{
-				if (_Parent != null && _Parent.FuncDefs[i].Body == null)
-				{
-					_Parent.FuncDefs[i].Body = args[i];
-				}
-			}
+	//	internal string Link;
+	//	public List<IApplicable> Args { get; } = new List<IApplicable>();
+	//	private Function _Parent;
 
-			if (_Parent != null && _Parent.Body is Application app)
-			{
-				Function func;
-				if (app.Link == _Parent.ID)
-				{
-					func = _Parent;
-				}
-				else
-				{
-					func = _Parent.FuncDefs.Find(f => f.ID == app.Link);
-				}
+	//	//public DValue Invoke(List<IApplicable> args)
+	//	//{
+	//	//	for (int i = 0; i < args.Count; i++)
+	//	//	{
+	//	//		if (_Parent != null && _Parent.FuncDefs[i].Body == null)
+	//	//		{
+	//	//			_Parent.FuncDefs[i].Body = args[i];
+	//	//		}
+	//	//	}
 
-				var values = Args.Select(a => a.Invoke(a.Args)).ToList();
+	//	//	if (_Parent != null && _Parent.Body is Application app)
+	//	//	{
+	//	//		Function func;
+	//	//		if (app.Link == _Parent.ID)
+	//	//		{
+	//	//			func = _Parent;
+	//	//		}
+	//	//		else
+	//	//		{
+	//	//			func = _Parent.FuncDefs.Find(f => f.ID == app.Link);
+	//	//		}
 
-				if (func == null)
-				{
-					return Stdlib.Call(app.Link, values);
-				}
-				else
-				{
-					return Invoke(app.Args);
-				}
-			}
-			else
-			{
-				return Stdlib.Call("valueof", Args.Select(a => a.Invoke(a.Args)).ToList());
-			}
-		}
-	}
+	//	//		var values = Args.Select(a => a.Invoke(a.Args)).ToList();
 
-	public class DValue : IApplicable
-	{
-		public static DValue GetString(string quotedString) => quotedString[1..^1];
-		private DValue(decimal input) => _Data = input;
-		private DValue(string input) => _Data = input;
-		public static implicit operator DValue(decimal input) => new DValue(input);
-		public static implicit operator DValue(int input) => new DValue(input);
-		public static implicit operator DValue(double input) => new DValue((decimal)input);
-		public static implicit operator DValue(bool input) => new DValue(input ? 1 : 0);
-		public static implicit operator DValue(string input) => new DValue(input);
-
-		private object _Data;
-
-		public List<IApplicable> Args => new List<IApplicable>();
-
-		public bool TryGet(out decimal output)
-		{
-			if (_Data is decimal)
-			{
-				output = (decimal)_Data;
-				return true;
-			}
-			else
-			{
-				var ret = decimal.TryParse((string)_Data, out output);
-				return ret;
-			}
-		}
-		public bool TryGet(out string output)
-		{
-			if (_Data is string)
-			{
-				output = (string)_Data;
-				return true;
-			}
-			else
-			{
-				output = _Data.ToString();
-				return true;
-			}
-		}
-
-		public DValue Invoke(List<IApplicable> args) => this;
-
-		public override string ToString() => _Data.ToString();
-	}
-
-	public static class Stdlib
-	{
-		public static DValue Call(string name, List<DValue> values)
-		{
-			switch (name)
-			{
-				case "valueof":
-					return values[0];
-
-				case "print":
-					return Print(values[0]);
-
-				default:
-					return StdMath.Call(name, values);
-			}
-		}
-
-		public static DValue Print(DValue value)
-		{
-			Console.WriteLine(value);
-
-			return true;
-		}
-	}
-
-	public static class StdMath
-	{
-		public static DValue Call(string name, List<DValue> values)
-		{
-			switch (name)
-			{
-				case "add":
-					return Add(values[0], values[1]);
-
-				default:
-					throw new ArgumentException();
-			}
-		}
-
-		public static DValue Add(DValue v1, DValue v2)
-		{
-			if (v1.TryGet(out decimal d1) && v2.TryGet(out decimal d2))
-			{
-				return d1 + d2;
-			}
-			else
-			{
-				throw new InvalidCastException();
-			}
-		}
-	}
+	//	//		if (func == null)
+	//	//		{
+	//	//			return Stdlib.Call(app.Link, values);
+	//	//		}
+	//	//		else
+	//	//		{
+	//	//			return Invoke(app.Args);
+	//	//		}
+	//	//	}
+	//	//	else
+	//	//	{
+	//	//		return Stdlib.Call("valueof", Args.Select(a => a.Invoke(a.Args)).ToList());
+	//	//	}
+	//	//}
+	//}
 }
