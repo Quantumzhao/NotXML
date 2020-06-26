@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <fun id="main">
-    <para id="argv"/>
-    <fun id="fib">
-      <para id="n"/>
-      <app id="if">
-        <app id="or">
-          <app id="eq">
+<fun id="main">
+  <par id="argv"/>
+  <fun id="fib">
+    <par id="n"/>
+    <app id="if">
+      <app id="or">
+        <app id="eq">
+          <fun>n</fun>
+          <fun>1</fun>
+        </app>
+        <app id="eq">
+          <fun>n</fun>
+          <fun>2</fun>
+        </app>
+      </app>
+      <fun>1</fun>
+      <app id="add">
+        <app id="Fib">
+          <app id="sub">
             <fun>n</fun>
             <fun>1</fun>
           </app>
-          <app id="eq">
+        </app>
+        <app id="Fib">
+          <app id="sub">
             <fun>n</fun>
             <fun>2</fun>
           </app>
         </app>
-        <fun>1</fun>
-        <app id="add">
-          <app id="Fib">
-            <app id="sub">
-              <fun>n</fun>
-              <fun>1</fun>
-            </app>
-          </app>
-          <app id="Fib">
-            <app id="sub">
-              <fun>n</fun>
-              <fun>2</fun>
-            </app>
-          </app>
-        </app>
-      </app>
-    </fun>
-    <app id="print">
-      <app id="fib">
-        <app id="scan"/>
       </app>
     </app>
   </fun>
+  <app id="print">
+    <app id="fib">
+      <app id="scan"/>
+    </app>
+  </app>
+</fun>

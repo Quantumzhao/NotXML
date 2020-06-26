@@ -30,6 +30,7 @@ namespace NotXML
 
 			var doc = GetMain(@"C:\Users\yisha.000\source\repos\NotXML\NotXML\fib.notxml");
 			var main = Function.Create(doc, new HashSet<Function>());
+			(main as Function).Environment.First(f => f.ID == "argv").Application = new Application((DValue)2);
 			main.Invoke();
 		}
 
@@ -43,42 +44,6 @@ namespace NotXML
 
 	public class Function : IFunction
 	{
-		//public Function(XmlNode node)
-		//{
-		//	ID = node.Attributes?["id"]?.InnerText ?? string.Empty;
-		//	if (ID == string.Empty)
-		//	{
-
-		//	}
-
-		//	foreach (XmlNode component in node.ChildNodes)
-		//	{
-		//		switch (component.Name)
-		//		{
-		//			case "par":
-		//				FuncDefs.Add(new Function(component.Attributes["id"].InnerText));
-		//				break;
-
-		//			case "fun":
-		//				FuncDefs.Add(new Function(component));
-		//				break;
-
-		//			case "app":
-		//				if (component.InnerXml != component.InnerText)
-		//				{
-		//					Body = new Application(component, this);
-		//				}
-		//				else
-		//				{
-		//					Body = (DValue)component.InnerText;
-		//				}
-		//				break;
-
-		//			default:
-		//				break;
-		//		}
-		//	}
-		//}
 		private Function() { }
 		public static IFunction Create(XmlNode node, HashSet<Function> env)
 		{
@@ -114,7 +79,9 @@ namespace NotXML
 				switch (component.Name)
 				{
 					case "par":
-						func.Environment.Add(new Function(component.Attributes["id"].InnerText));
+						var param = new Function(component.Attributes["id"].InnerText);
+						param.Environment = func.Environment;
+						func.Environment.Add(param);
 						break;
 
 					case "fun":
@@ -142,22 +109,8 @@ namespace NotXML
 
 		private Function(string id) => ID = id;
 		public string ID;
-		//public List<Function> FuncDefs = new List<Function>();
-		//public IApplicable Body = null;
 		public HashSet<Function> Environment = new HashSet<Function>();
 		public Application Application;
-
-		//public DValue GetValue(List<IApplicable> args)
-		//{
-		//	if (Body is Application application)
-		//	{
-		//		return application.Invoke(args);
-		//	}
-		//	else
-		//	{
-		//		return Body as DValue;
-		//	}
-		//}
 
 		public IFunction Invoke()
 		{
@@ -208,93 +161,26 @@ namespace NotXML
 			}
 			else
 			{
+				//var i = 0;
+				//foreach (var f in func.Environment)
+				//{
+				//	if (f.Application == null)
+				//	{
+				//		f.Application = new Application(Args[i]);
+				//		i++;
+				//	}
+				//}
+				int i = 0;
+				var argList = Args.ToList();
+				foreach (var para in func.Environment.Where(e => e.Application == null))
+				{
+					para.Application = new Application(argList[i]);
+					i++;
+				}
+
+				Args = Args.Select(a => a).ToList();
 				return func.Invoke();
 			}
 		}
 	}
-
-
-	//public class Application// : IApplicable
-	//{
-	//	private Application(DValue value)
-	//	{
-	//		Link = "valueof";
-	//		Args.Add(value);
-	//	}
-	//	public Application(XmlNode node, Function parent)
-	//	{
-	//		Link = node?.Attributes?["id"]?.InnerText ?? string.Empty;
-	//		_Parent = parent;
-
-	//		if (node.InnerXml[0] != '<')
-	//		{
-	//			var value = node.InnerText;
-	//			if (node.InnerText[0] == '\"')
-	//			{
-	//				Args.Add(DValue.GetString(value));
-	//			}
-	//			else
-	//			{
-	//				Args.Add((DValue)value);
-	//			}
-	//		}
-	//		else
-	//		{
-	//			foreach (XmlNode app in node.ChildNodes)
-	//			{
-	//				if (app.InnerText == app.InnerXml)
-	//				{
-	//					Args.Add((DValue)app.InnerText);
-	//				}
-	//				else
-	//				{
-	//					//Args.Add(new Application(app, _Parent));
-	//				}
-	//			}
-	//		}
-	//	}
-
-	//	internal string Link;
-	//	public List<IApplicable> Args { get; } = new List<IApplicable>();
-	//	private Function _Parent;
-
-	//	//public DValue Invoke(List<IApplicable> args)
-	//	//{
-	//	//	for (int i = 0; i < args.Count; i++)
-	//	//	{
-	//	//		if (_Parent != null && _Parent.FuncDefs[i].Body == null)
-	//	//		{
-	//	//			_Parent.FuncDefs[i].Body = args[i];
-	//	//		}
-	//	//	}
-
-	//	//	if (_Parent != null && _Parent.Body is Application app)
-	//	//	{
-	//	//		Function func;
-	//	//		if (app.Link == _Parent.ID)
-	//	//		{
-	//	//			func = _Parent;
-	//	//		}
-	//	//		else
-	//	//		{
-	//	//			func = _Parent.FuncDefs.Find(f => f.ID == app.Link);
-	//	//		}
-
-	//	//		var values = Args.Select(a => a.Invoke(a.Args)).ToList();
-
-	//	//		if (func == null)
-	//	//		{
-	//	//			return Stdlib.Call(app.Link, values);
-	//	//		}
-	//	//		else
-	//	//		{
-	//	//			return Invoke(app.Args);
-	//	//		}
-	//	//	}
-	//	//	else
-	//	//	{
-	//	//		return Stdlib.Call("valueof", Args.Select(a => a.Invoke(a.Args)).ToList());
-	//	//	}
-	//	//}
-	//}
 }

@@ -1,8 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <fun id="main">
   <par id="argv"/>
-  <app id="print">
+  <fun id="addw">
+    <par id="n1"/>
+    <par id="n2"/>
     <app id="add">
+      <fun>n1</fun>
+      <fun>n2</fun>
+    </app>
+  </fun>
+  <app id="print">
+    <app id="addw">
       <fun>1</fun>
       <fun>2</fun>
     </app>

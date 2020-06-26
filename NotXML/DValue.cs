@@ -20,7 +20,7 @@ namespace NotXML
 			{
 				return true;
 			}
-			else if (input.TryCast(out string s) && s != string.Empty)
+			else if (input.TryCast(out string s) && s != string.Empty && d != 0)
 			{
 				return true;
 			}
