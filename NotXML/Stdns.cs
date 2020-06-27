@@ -184,7 +184,7 @@ namespace NotXML
 		public static DValue GreaterEqual(IFunction v1, IFunction v2) => Binop(v1, v2, (n1, n2) => n1 >= n2);
 		public static DValue LessEqual   (IFunction v1, IFunction v2) => Binop(v1, v2, (n1, n2) => n1 <= n2);
 		public static DValue And         (IFunction v1, IFunction v2) => (bool)(DValue)v1.Invoke() && (bool)(DValue)v2.Invoke();
-		public static DValue Or          (IFunction v1, IFunction v2) => (bool)(DValue)v1.Invoke() || (bool)(DValue)v2.Invoke();
+		public static DValue Or          (IFunction v1, IFunction v2) => ((DValue)v1.Invoke()) == 0 || (bool)(DValue)v2.Invoke();
 		public static DValue Not         (IFunction v)                => !(bool)(DValue)v.Invoke();
 
 		private static DValue Binop<T>(IFunction f1, IFunction f2, Func<decimal, decimal, T> op)
