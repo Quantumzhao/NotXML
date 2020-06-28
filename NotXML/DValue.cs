@@ -14,6 +14,18 @@ namespace NotXML
 		public static implicit operator DValue(bool input) => new DValue(input ? 1 : 0);
 		public static implicit operator DValue(string input) => new DValue(input);
 
+		public static explicit operator decimal(DValue input)
+		{
+			if (input.TryCast(out decimal d))
+			{
+				return d;
+			}
+			else
+			{
+				throw new InvalidCastException();
+			}
+		}
+
 		public static explicit operator bool(DValue input)
 		{
 			if (input.TryCast(out decimal d) && d != 0)

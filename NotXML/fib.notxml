@@ -16,13 +16,13 @@
       </app>
       <fun>1</fun>
       <app id="add">
-        <app id="Fib">
+        <app id="fib">
           <app id="sub">
             <fun>n</fun>
             <fun>1</fun>
           </app>
         </app>
-        <app id="Fib">
+        <app id="fib">
           <app id="sub">
             <fun>n</fun>
             <fun>2</fun>
@@ -33,7 +33,9 @@
   </fun>
   <app id="print">
     <app id="fib">
-      <app id="scan"/>
+      <app id="valueof">
+        <app id="scan"/>
+      </app>
     </app>
   </app>
 </fun>

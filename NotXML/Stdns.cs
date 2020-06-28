@@ -76,12 +76,12 @@ namespace NotXML
 
 	public static class Stdio
 	{
-		public static DValue Call(string name, List<IFunction> values)
+		public static IFunction Call(string name, List<IFunction> values)
 		{
 			switch (name)
 			{
 				case "print":
-					return Print((DValue)values[0].Invoke());
+					return Print((DValue)values[0].Invoke(), values[1]);
 
 				case "scan":
 					return Scan();
@@ -91,10 +91,10 @@ namespace NotXML
 			}
 		}
 
-		public static DValue Print(DValue value)
+		public static IFunction Print(DValue value, IFunction succession)
 		{
 			Console.WriteLine(value);
-			return true;
+			return succession.Invoke();
 		}
 
 		public static DValue Scan()
@@ -139,7 +139,7 @@ namespace NotXML
 				case "mod":
 					return Remainder(values[0], values[1]);
 
-				case "ls":
+				case "lt":
 					return Less(values[0], values[1]);
 
 				case "gt":
@@ -184,7 +184,7 @@ namespace NotXML
 		public static DValue GreaterEqual(IFunction v1, IFunction v2) => Binop(v1, v2, (n1, n2) => n1 >= n2);
 		public static DValue LessEqual   (IFunction v1, IFunction v2) => Binop(v1, v2, (n1, n2) => n1 <= n2);
 		public static DValue And         (IFunction v1, IFunction v2) => (bool)(DValue)v1.Invoke() && (bool)(DValue)v2.Invoke();
-		public static DValue Or          (IFunction v1, IFunction v2) => ((DValue)v1.Invoke()) == 0 || (bool)(DValue)v2.Invoke();
+		public static DValue Or          (IFunction v1, IFunction v2) => (bool)(DValue)v1.Invoke() || (bool)(DValue)v2.Invoke();
 		public static DValue Not         (IFunction v)                => !(bool)(DValue)v.Invoke();
 
 		private static DValue Binop<T>(IFunction f1, IFunction f2, Func<decimal, decimal, T> op)
@@ -229,7 +229,7 @@ namespace NotXML
 					return Concatnate((DValue)values[0].Invoke(), (DValue)values[1].Invoke());
 
 				default:
-					throw new ArgumentException();
+					return (DValue)StdVector.Call(name, values);
 			}
 		}
 
@@ -244,5 +244,30 @@ namespace NotXML
 				throw new InvalidCastException();
 			}
 		}
+	}
+
+	public static class StdVector
+	{
+		public static IFunction Call(string name, List<IFunction> values)
+		{
+			switch (name)
+			{
+				case "sizeof":
+					return Sizeof((DVector)values[0]);
+
+				case "get":
+					return Get((DVector)values[0], (DValue)values[1]);
+
+				default:
+					throw new ArgumentException();
+			}
+		}
+
+		public static IFunction Sizeof(DVector vector)
+		{
+			return vector.Count;
+		}
+
+		public static IFunction Get(DVector vector, DValue index) => vector[(int)(decimal)index];
 	}
 }
