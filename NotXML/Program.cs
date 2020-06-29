@@ -81,6 +81,7 @@ namespace NotXML
 					case "par":
 						var param = new Function(component.Attributes["id"].InnerText);
 						param.Environment = func.Environment;
+						func.Parameters.Add(param);
 						func.Environment.Add(param);
 						break;
 
@@ -109,6 +110,7 @@ namespace NotXML
 
 		private Function(string id) => ID = id;
 		public string ID;
+		public List<Function> Parameters = new List<Function>();
 		public HashSet<Function> Environment = new HashSet<Function>();
 		public Application Application;
 
@@ -172,13 +174,13 @@ namespace NotXML
 				//}
 				int i = 0;
 				var argList = Args.ToList();
-				foreach (var para in func.Environment.Where(e => e.Application == null))
+				foreach (var para in func.Parameters)
 				{
-					para.Application = new Application(argList[i]);
+					para.Application = new Application(argList[i].Invoke());
 					i++;
 				}
 
-				Args = Args.Select(a => a).ToList();
+				//Args = Args.Select(a => a.Invoke()).ToList();
 				return func.Invoke();
 			}
 		}

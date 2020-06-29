@@ -7,7 +7,9 @@ namespace NotXML
 {
 	public class DVector : IEnumerable<IFunction>, IFunction
 	{
-		private List<IFunction> _Entries = new List<IFunction>();
+		public DVector(List<IFunction> entries) => _Entries = entries;
+
+		private List<IFunction> _Entries;
 
 		public IFunction this[int index]
 		{

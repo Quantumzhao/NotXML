@@ -33,9 +33,7 @@
   </fun>
   <app id="print">
     <app id="fib">
-      <app id="valueof">
-        <app id="scan"/>
-      </app>
+      <app id="scan"/>
     </app>
   </app>
 </fun>

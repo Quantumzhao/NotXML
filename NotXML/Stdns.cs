@@ -46,6 +46,11 @@ namespace NotXML
 
 		public static IFunction Valueof(IFunction value)
 		{
+			if (value is Function func)
+			{
+				return func.Application.Args[0];
+			}
+
 			var iter = value;
 			IFunction prev;
 			do
@@ -81,7 +86,7 @@ namespace NotXML
 			switch (name)
 			{
 				case "print":
-					return Print((DValue)values[0].Invoke(), values[1]);
+					return Print((DValue)values[0].Invoke(), (DValue)0);
 
 				case "scan":
 					return Scan();
@@ -252,6 +257,9 @@ namespace NotXML
 		{
 			switch (name)
 			{
+				case "vector":
+					return Vector(values);
+
 				case "sizeof":
 					return Sizeof((DVector)values[0]);
 
@@ -269,5 +277,7 @@ namespace NotXML
 		}
 
 		public static IFunction Get(DVector vector, DValue index) => vector[(int)(decimal)index];
+
+		public static DVector Vector(List<IFunction> entries) => new DVector(entries);
 	}
 }
