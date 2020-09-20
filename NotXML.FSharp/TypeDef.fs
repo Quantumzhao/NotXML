@@ -14,5 +14,3 @@ type Value =
     | Vector_Val of Value list
     | Func_Red of Expr list
     | Func_Std of ((Expr -> Value) -> Expr list -> Value)
-
-

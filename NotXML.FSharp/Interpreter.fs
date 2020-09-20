@@ -1,17 +1,12 @@
 ﻿module Interpreter
 
-open Parser
 open TypeDef
 
 let find_id env name = 
     if not (Stdlib.in_stdlib name) then
-        let tup = List.find (fun (id, x) -> 
-            match x with
-            | Func_Red _ -> id = name
-            | _ -> false) env
+        let tup = List.find (fun (id, _) -> id = name) env
         match tup with id, value -> value
-    else
-        Func_Std(Stdlib.find name)
+    else Func_Std(Stdlib.find name)
 
 let rec interp (env : (string * Value) list) (expr : Expr) : Value = 
     match expr with
@@ -34,10 +29,8 @@ let rec interp (env : (string * Value) list) (expr : Expr) : Value =
                 | ID (s) -> s
                 | _ -> failwith ""
             let rec expand_env index old_env = 
-                if index = -1 then
-                    old_env
-                else
-                    ((get_id index), (arg_vals.[index])) :: expand_env (index - 1) old_env
+                if index = -1 then old_env
+                else ((get_id index), (arg_vals.[index])) :: expand_env (index - 1) old_env
             expand_env (arg_vals.Length - 1) env
         let func_app = List.find (fun xp -> 
             match xp with 
