@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NotXML.FSharp": {
+      "commandName": "Project",
+      "commandLineArgs": "fib.notxml"
+    }
+  }
+}
