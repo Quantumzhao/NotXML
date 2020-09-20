@@ -5,14 +5,14 @@
     <par id="n1"/>
     <par id="n2"/>
     <app id="add">
-      <fun>n1</fun>
-      <fun>n2</fun>
+      <val>n1</val>
+      <val>n2</val>
     </app>
   </fun>
   <app id="print">
     <app id="addw">
-      <fun>1</fun>
-      <fun>2</fun>
+      <val>1</val>
+      <val>2</val>
     </app>
   </app>
 </fun>
